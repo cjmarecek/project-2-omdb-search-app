@@ -3,10 +3,10 @@ export const fetchMovies = async (searchTerm, page) => {
     const url = `http://www.omdbapi.com/?s=${searchTerm}&apikey=8726ae5a&page=${page}`;
     const response = await fetch(url);
     const jsonResponse = await response.json();
-    return jsonResponse.Search;
+    return jsonResponse;
   } catch (error) {
     console.log(error);
-    return [];
+    return {Search: []};
   }
 };
 

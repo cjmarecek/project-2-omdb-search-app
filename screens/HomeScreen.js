@@ -23,8 +23,7 @@ export default class HomeScreen extends React.Component {
       isLoading: false, //Loading state used while loading more data
       page: 1,
       totalResults: null,
-      refreshing: false,
-      
+      refreshing: false
     };
   }
 
@@ -33,24 +32,26 @@ export default class HomeScreen extends React.Component {
   }
 
   getMovies = async () => {
-    if (this.state.searchTerm.length >= 2) {
+    if (this.state.searchTerm.length > 2) {
       this.setState({ isLoading: true }, async () => {
         const searchResults = await fetchMovies(
           this.state.searchTerm,
           this.state.page
         );
         if (
-          typeof searchResults != "undefined" &&
-          searchResults != null &&
-          searchResults.length != null &&
-          searchResults.length > 0
+          typeof searchResults.Search != "undefined" &&
+          searchResults.Search != null &&
+          searchResults.Search.length != null &&
+          searchResults.Search.length > 0
         ) {
           this.setState({
-            searchResults: [...this.state.searchResults, ...searchResults],
+            searchResults:
+              this.state.page === 1
+                ? searchResults.Search
+                : [...this.state.searchResults, ...searchResults.Search],
             isLoading: false,
             refreshing: false
           });
-
         } else {
           this.setState({
             isLoading: false,
@@ -61,7 +62,9 @@ export default class HomeScreen extends React.Component {
       });
     } else {
       this.setState({
-        searchResults: []
+        isLoading: false,
+            searchResults: [],
+            refreshing: false
       });
     }
   };
@@ -75,19 +78,13 @@ export default class HomeScreen extends React.Component {
     this.getMovies();
   };
 
-  handleSearchChange = searchTerm => {
-    this.setState({
-      searchTerm: searchTerm,
-      searchResults: [],
-      page: 1,
-
-    }),
-      this.getMovies();
-  };
-
   renderItem = ({ item }) => (
     <Movie {...item} navigation={this.props.navigation} />
   );
+
+  renderSeparator = () => {
+    return <View style={styles.separator} />;
+  };
 
   renderFooter = () => {
     return (
@@ -108,27 +105,42 @@ export default class HomeScreen extends React.Component {
   };
 
   handleRefresh = () => {
-    this.setState(
-      {
-        // searchResults: [],
-        page: 1,
-      },
-      () => {
-        this.getMovies();
-      }
+    // this.setState(
+    //   {
+    //     searchResults: [],
+    //     page: 1
+    //   },
+    //   () => {
+    this.getMovies();
+    console.log(this.state.searchResults);
+    //   }
+    // );
+  };
+
+  handleSearchChange = searchTerm => {
+    this.setState({
+      searchTerm: searchTerm,
+      searchResults: [],
+      page: 1
+    });
+    this.getMovies();
+  };
+
+  renderHeader = () => {
+    return (
+      <TextInput
+        style={styles.input}
+        placeholder="Write your search here"
+        value={this.state.searchTerm}
+        onChangeText={this.handleSearchChange}
+        value={this.state.value}
+      />
     );
   };
 
   render() {
     return (
       <View style={styles.container}>
-        <TextInput
-          style={styles.input}
-          value={this.state.searchTerm}
-          placeholder="Write your search here"
-          onChangeText={this.handleSearchChange}
-        />
-        {/* {this.state.searchResults.length === 0 ? <Text>No results</Text> : null} */}
         {this.state.loading ? (
           <ActivityIndicator size="large" />
         ) : (
@@ -136,13 +148,16 @@ export default class HomeScreen extends React.Component {
             renderItem={this.renderItem}
             data={this.state.searchResults}
             keyExtractor={item => item.imdbID}
-            onEndReached={this.handleLoadMoreData}
-            onEndReachedThreshold={0.5}
+            ListHeaderComponent={this.renderHeader}
+            ItemSeparatorComponent={this.renderSeparator}
+            ListEmptyComponent={this.renderEmpty}
             ListFooterComponent={this.renderFooter}
-            ListEmptyComponent={this.renderEmpty()}
+            onEndReached={this.handleLoadMoreData}
+            //onEndReached={() => hasMore && refine()}
+            onEndReachedThreshold={0.5}
             refreshing={this.state.refreshing}
             onRefresh={this.handleRefresh}
-            extraData={this.state.searchResults}
+            extraData={this.state}
           />
         )}
       </View>
@@ -168,5 +183,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row"
+  },
+  separator: {
+    height: 1,
+    width: "86%",
+    backgroundColor: "#CED0CE",
+    marginLeft: "14%"
   }
 });
